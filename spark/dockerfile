@@ -1,0 +1,82 @@
+FROM apache/spark:3.5.1
+
+USER root
+
+ARG USERNAME=sparkuser
+ARG USER_UID=1000
+ARG USER_GID=1000
+
+# Install Python and required packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3 \
+        python3-pip \
+        python3-venv \
+        python3-dev \
+        build-essential \
+        curl \
+        procps \
+        iputils-ping && \
+    rm -rf /var/lib/apt/lists/*
+
+# Python alias
+RUN ln -sf /usr/bin/python3 /usr/bin/python
+
+# Create application user
+RUN groupadd --gid ${USER_GID} ${USERNAME} && \
+    useradd \
+        --uid ${USER_UID} \
+        --gid ${USER_GID} \
+        --create-home \
+        --shell /bin/bash \
+        ${USERNAME}
+
+# Create Spark working directories
+RUN mkdir -p \
+    /opt/spark/work \
+    /opt/spark/logs && \
+    chown -R ${USERNAME}:${USERNAME} \
+        /opt/spark/work \
+        /opt/spark/logs
+
+# Create project directories
+RUN mkdir -p \
+    /opt/project \
+    /opt/project/data \
+    /opt/project/database/duckdb \
+    /opt/project/jobs \
+    /opt/project/dist \
+    /opt/project/logs
+
+# Install Python dependencies
+COPY spark/requirements.txt /tmp/requirements.txt
+
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir -r /tmp/requirements.txt && \
+    rm -f /tmp/requirements.txt
+
+# Copy entrypoint
+COPY spark/entrypoint.sh /opt/entrypoint.sh
+RUN chmod +x /opt/entrypoint.sh
+
+# Spark Environment
+ENV SPARK_HOME=/opt/spark
+ENV PATH="${SPARK_HOME}/bin:${SPARK_HOME}/sbin:${PATH}"
+ENV PYSPARK_PYTHON=/usr/bin/python3
+ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python3
+
+# Add Spark Python libraries
+ENV PYTHONPATH="${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.9.7-src.zip:${PYTHONPATH}"
+
+ENV PYTHONUNBUFFERED=1
+
+# Permissions
+RUN chown -R ${USERNAME}:${USERNAME} \
+    /opt/project \
+    /opt/entrypoint.sh
+
+WORKDIR /opt/project
+
+USER ${USERNAME}
+
+ENTRYPOINT ["/opt/entrypoint.sh"]

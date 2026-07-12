@@ -1,0 +1,1 @@
+from tpyImdbPipeline.main import main

@@ -1,0 +1,81 @@
+version: "3.9"
+
+name: custom-spark-cluster
+
+services:
+
+  spark-master:
+
+    build:
+      context: .
+      dockerfile: spark/Dockerfile
+
+    image: custom-spark:latest
+
+    container_name: spark-master
+    hostname: spark-master
+
+    command: master
+
+    restart: unless-stopped
+
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+
+    environment:
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: 7077
+      SPARK_MASTER_WEBUI_PORT: 8080
+
+    volumes:
+      - ./.env:/opt/project/.env
+      - ./dist:/opt/project/dist
+      - ./data/raw:/opt/project/data/raw
+      - ./data/processed:/opt/project/data/processed
+      - ./database/duckdb:/opt/project/database/duckdb
+      - ./logs:/opt/project/logs
+      - ./jobs:/opt/project/jobs
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - spark-network
+
+  spark-worker:
+
+    image: custom-spark:latest
+
+    command: worker
+
+    restart: unless-stopped
+
+    depends_on:
+      spark-master:
+        condition: service_healthy
+
+    environment:
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: 7077
+      SPARK_WORKER_MEMORY: ${SPARK_WORKER_MEMORY:-2G}
+      SPARK_WORKER_CORES: ${SPARK_WORKER_CORES:-2}
+
+    volumes:
+      - ./.env:/opt/project/.env
+      - ./dist:/opt/project/dist
+      - ./data/raw:/opt/project/data/raw
+      - ./data/processed:/opt/project/data/processed
+      - ./database/duckdb:/opt/project/database/duckdb
+      - ./logs:/opt/project/logs
+      - ./jobs:/opt/project/jobs
+
+    networks:
+      - spark-network
+
+networks:
+  spark-network:
+    driver: bridge

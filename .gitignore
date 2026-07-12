@@ -216,3 +216,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+.env
+*.tsv
+*.csv
+*.parquet
+*.parquet*
+*.db
+*.duckdb
+*.marker
+
+.venv/
+data/processed/
+data/raw/
+database/
+logs/
+dist/
+tpyImdbPipeline.egg-info/
+other/
