@@ -97,7 +97,7 @@ def extractTransformLoad(spark:SparkSession):
             "tconst", "titleType", "primaryTitle", "originalTitle", "isAdult", 
             "startYear", "endYear","runtimeMinutes","genres","averageRating","numVotes"
         ]
-        movie_fact_df = title_basics_df.join(title_ratings_df, on="tconst", how="left").select(*movie_fact_cols)
+        movie_fact_df = title_basics_df.join(title_ratings_df, on="tconst", how="left").select(*movie_fact_cols) # .limit(1000) # limiting to 1000 rows as running in local machine
         movie_fact_partition_cols = ["titleType","startYear"]
         movie_fact_df.write.format("parquet").mode("overwrite").option("partitionOverwriteMode", "dynamic").option("compression", "snappy").partitionBy(*movie_fact_partition_cols).save(os.path.join(targetParquetPath, "movie_facts/"))
         # Write data to Parquet files
@@ -105,14 +105,14 @@ def extractTransformLoad(spark:SparkSession):
             "tconst", "nconst", "primaryName", "birthYear", "deathYear",
             "primaryProfession", "category", "job", "characters"
         ]
-        movie_people_df = title_principals_df.join(person_df, on="nconst", how="inner").select(*movie_people_cols)
+        movie_people_df = title_principals_df.join(person_df, on="nconst", how="inner").select(*movie_people_cols) # .limit(1000) # limiting to 1000 rows as running in local machine
         movie_people_df.write.format("parquet").mode("overwrite").option("compression", "snappy").save(os.path.join(targetParquetPath, "movie_people/"))
         # Write data to Parquet files
         title_cols = [
             "titleId", "ordering", "title", "region", "language",
             "types", "attributes", "isOriginalTitle"
         ]
-        title_df = title_akas_df.select(*title_cols)
+        title_df = title_akas_df.select(*title_cols) # .limit(1000) # limiting to 1000 rows as running in local machine
         title_df.write.format("parquet").mode("overwrite").option("compression", "snappy").save(os.path.join(targetParquetPath, "title_akas/"))
         logger.info("ETL process completed successfully.")
         return 
