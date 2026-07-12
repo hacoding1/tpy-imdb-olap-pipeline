@@ -31,10 +31,19 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} && \
         --shell /bin/bash \
         ${USERNAME}
 
+# Create Spark working directories
+RUN mkdir -p \
+    /opt/spark/work \
+    /opt/spark/logs && \
+    chown -R ${USERNAME}:${USERNAME} \
+        /opt/spark/work \
+        /opt/spark/logs
+
 # Create project directories
 RUN mkdir -p \
     /opt/project \
     /opt/project/data \
+    /opt/project/database/duckdb \
     /opt/project/jobs \
     /opt/project/dist \
     /opt/project/logs

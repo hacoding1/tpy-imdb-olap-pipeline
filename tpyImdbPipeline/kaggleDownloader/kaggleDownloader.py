@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from kaggle.api.kaggle_api_extended import KaggleApi
 from tpyImdbPipeline.utils.logger import get_logger
 
 
@@ -17,11 +16,12 @@ class KaggleDownloader:
         self.download_directory = Path(download_directory)
         self.download_directory.mkdir(parents=True, exist_ok=True)
         os.environ["KAGGLE_USERNAME"] = os.getenv("KAGGLE_USERNAME", "")
-        os.environ["KAGGLE_API_TOKEN"] = os.getenv("KAGGLE_API_TOKEN", "")
+        os.environ["KAGGLE_KEY"] = os.getenv("KAGGLE_API_TOKEN", "")
         if not os.environ["KAGGLE_USERNAME"] or not os.environ["KAGGLE_API_TOKEN"]:
             raise ValueError(
                 "KAGGLE_USERNAME and KAGGLE_API_TOKEN must be configured in the .env file."
             )
+        from kaggle.api.kaggle_api_extended import KaggleApi
         self.api = KaggleApi()
         self.api.authenticate()
 

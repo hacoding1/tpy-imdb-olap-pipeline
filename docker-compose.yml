@@ -5,6 +5,7 @@ name: custom-spark-cluster
 services:
 
   spark-master:
+
     build:
       context: .
       dockerfile: spark/Dockerfile
@@ -23,15 +24,18 @@ services:
       - "8080:8080"
 
     environment:
-      SPARK_NO_DAEMONIZE: "true"
       SPARK_MASTER_HOST: spark-master
       SPARK_MASTER_PORT: 7077
+      SPARK_MASTER_WEBUI_PORT: 8080
 
     volumes:
-      - ./:/opt/project
-
-    networks:
-      - spark-network
+      - ./.env:/opt/project/.env
+      - ./dist:/opt/project/dist
+      - ./data/raw:/opt/project/data/raw
+      - ./data/processed:/opt/project/data/processed
+      - ./database/duckdb:/opt/project/database/duckdb
+      - ./logs:/opt/project/logs
+      - ./jobs:/opt/project/jobs
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
@@ -39,39 +43,12 @@ services:
       timeout: 5s
       retries: 10
 
-  spark-worker-1:
-
-    image: custom-spark:latest
-
-    container_name: spark-worker-1
-    hostname: spark-worker-1
-
-    command: worker
-
-    restart: unless-stopped
-
-    depends_on:
-      spark-master:
-        condition: service_healthy
-
-    environment:
-      SPARK_NO_DAEMONIZE: "true"
-      SPARK_MASTER_URL: spark://spark-master:7077
-      SPARK_WORKER_MEMORY: ${SPARK_WORKER_MEMORY:-2G}
-      SPARK_WORKER_CORES: ${SPARK_WORKER_CORES:-2}
-
-    volumes:
-      - ./:/opt/project
-
     networks:
       - spark-network
 
-  spark-worker-2:
+  spark-worker:
 
     image: custom-spark:latest
-
-    container_name: spark-worker-2
-    hostname: spark-worker-2
 
     command: worker
 
@@ -82,13 +59,19 @@ services:
         condition: service_healthy
 
     environment:
-      SPARK_NO_DAEMONIZE: "true"
-      SPARK_MASTER_URL: spark://spark-master:7077
+      SPARK_MASTER_HOST: spark-master
+      SPARK_MASTER_PORT: 7077
       SPARK_WORKER_MEMORY: ${SPARK_WORKER_MEMORY:-2G}
       SPARK_WORKER_CORES: ${SPARK_WORKER_CORES:-2}
 
     volumes:
-      - ./:/opt/project
+      - ./.env:/opt/project/.env
+      - ./dist:/opt/project/dist
+      - ./data/raw:/opt/project/data/raw
+      - ./data/processed:/opt/project/data/processed
+      - ./database/duckdb:/opt/project/database/duckdb
+      - ./logs:/opt/project/logs
+      - ./jobs:/opt/project/jobs
 
     networks:
       - spark-network

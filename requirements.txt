@@ -1,0 +1,11 @@
+pyspark
+pandas
+pyarrow
+duckdb
+boto3
+python-dotenv
+kaggle
+requests
+build
+wheel
+setuptools
